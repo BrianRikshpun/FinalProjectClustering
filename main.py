@@ -8,7 +8,8 @@ import scipy.cluster.hierarchy as hc
 import graphviz as gv
 import re
 import seaborn as sns
-
+from clusterAnalysis import clusterAnalysis
+from Models import Models
 
 def clean_db(merged):
     '''
@@ -170,6 +171,12 @@ if __name__ == '__main__':
     d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
+
+    #----- make sure the data is after clustering and with the cluster column -----
+    models = Models(data[data.columns[12:]])
+    models.ElbowKmeans()
+    clusterAnalizer = clusterAnalysis(data)
+
     # rankingAnalysis(data[data.columns[:10]])
     # plot_nas(data[data.columns[:10]])
     # taxonomyDescribe(data[data.columns[:10]])
