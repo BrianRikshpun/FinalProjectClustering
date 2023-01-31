@@ -5,10 +5,16 @@ from sklearn.cluster import KMeans
 import numpy as np
 import networkx as nx
 import scipy.cluster.hierarchy as hc
-
+import graphviz as gv
+import re
+import seaborn as sns
 
 
 def clean_db(merged):
+    '''
+    :param merged: merged dataset (features + taxonomy)
+    :return: cleaned dataset - ready to train
+    '''
 
     merged = merged.drop(columns=['Unnamed: 10', 'Unnamed: 0.1', 'Unnamed: 0', 'Division', 'Assembly'])
     ranks = [f'rank {i}' for i in range(2,10)]
@@ -26,6 +32,12 @@ def clean_db(merged):
 
 
 def plot_nas(df: pd.DataFrame):
+    '''
+
+    :param df: dataframe
+    :return: Nan bar plot
+    '''
+
     df = df.replace(r'^\s*$', np.nan, regex=True)
     if df.isnull().sum().sum() != 0:
         na_df = (df.isnull().sum() / len(df)) * 100
@@ -45,11 +57,6 @@ def plotTaxonomyConnectionsAndBars(r1, r2):
     :return: plot
     '''
 
-    #NONENONENONENONE - FIX
-
-    data[r1] = data[r1].str.replace("","None")
-    data[r2] = data[r2].str.replace("","None")
-
     for j in data[r1].unique():
 
         x = []
@@ -67,23 +74,22 @@ def plotTaxonomyConnectionsAndBars(r1, r2):
         plt.title(f'Taxonomy for {j}')
         plt.show()
 
-        G = nx.DiGraph()
-        for index,row in d.iterrows():
-            G.add_edge(row[r1], row[r2])
-
-        nx.draw(G, with_labels=True)
-        plt.show()
+        # G = nx.DiGraph()
+        # for index,row in d.iterrows():
+        #     G.add_edge(row[r1], row[r2])
+        #
+        # nx.draw(G, with_labels=True)
+        # plt.show()
 
 
 def rankingAnalysis(data):
 
-    for c in data.columns[6:]:
+    for c in data.columns[8:]:
         data[c].hist()
         plt.title(f'Histogram for column {c}')
         plt.show()
 
     #plotTaxonomyConnectionsAndBars('rank 9', 'rank 8')
-
 
 
 def clusterAnalysis(data, model, rank):
@@ -93,6 +99,7 @@ def clusterAnalysis(data, model, rank):
     data['rank'] = rank
     le = preprocessing.LabelEncoder()
     data['EncodedRank'] = le.fit_transform(rank)
+    codonUsageClusterheatMap(data)
 
     for ind,i in enumerate(data['cluster'].unique()):
         x = []
@@ -110,21 +117,62 @@ def clusterAnalysis(data, model, rank):
         plt.show()
 
 
+def codonUsageClusterheatMap(df):
+
+    # Heatmap idx = cluster, column = codon usage bias in %
+
+    cols = list(df.columns)[:-3]
+    idx = list(df['cluster'].unique())
+    add_row = {}
+    heat_df = pd.DataFrame(columns=cols)
+
+
+    for i in idx:
+        d = df.copy()
+        for col in cols:
+            add_row[col] = np.average(d[d['cluster'] == i][col])
+        heat_df = heat_df.append(add_row, ignore_index=True)
+
+
+    heat_df.style.background_gradient(cmap='viridis') \
+        .set_properties(**{'font-size': '20px'})
+
+
+    sns.heatmap(heat_df[heat_df.columns[7:-3]])
+    plt.show()
+
+
+def addrow(df, d, name, rank, instances, ins, out):
+
+    pass
+
+
+def taxonomyDescribe(data):
+
+    taxonomyData = pd.DataFrame(columns=['name','rank', '# instances', 'in', 'out'])
+    row = {k : '' for k in taxonomyData.columns}
+
+    for col in data.columns():
+        for node in data[col].unique():
+            if col == 'rank 9': #First rank
+                addrow(taxonomyData, row.copy(), node, col, len(data[data[col] == node]), 0,)
+
 
 if __name__ == '__main__':
 
-    d = pd.read_csv('rankedlineage122.csv', sep = '|')
+
+    d = pd.read_csv('rankedlineage122.csv', sep = '|') #Taxnomy
     d = d.rename({d.columns[0]:'Taxid',d.columns[1]:'species', d.columns[2]:'rank 2',
                   d.columns[3]:'rank 3', d.columns[4]:'rank 4',
                   d.columns[5]:'rank 5', d.columns[6]:'rank 6',
                   d.columns[7]:'rank 7', d.columns[8]:'rank 8', d.columns[9]:'rank 9'},axis = 1)
 
-    d2 = pd.read_csv('final_codon_dataset.csv')
+    d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
-
     data = clean_db(merged)
-    rankingAnalysis(data[data.columns[:10]])
-    plot_nas(data[data.columns[:10]])
+    # rankingAnalysis(data[data.columns[:10]])
+    # plot_nas(data[data.columns[:10]])
+    # taxonomyDescribe(data[data.columns[:10]])
     clusterAnalysis(data[data.columns[10:]],KMeans(n_clusters=4),data['rank 9'])
 
 
