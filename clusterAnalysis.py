@@ -3,10 +3,6 @@ from matplotlib import pyplot as plt
 from sklearn import preprocessing
 from sklearn.cluster import KMeans
 import numpy as np
-import networkx as nx
-import scipy.cluster.hierarchy as hc
-import graphviz as gv
-import re
 import seaborn as sns
 
 class clusterAnalysis:
