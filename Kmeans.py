@@ -85,6 +85,27 @@ for i in range(1,10):
 plt.plot(range(1,10),distortions_arr)
 plt.show()
 
+kmeans = KMeans(n_clusters=centers)
+kmeans.fit(X_train)
+class_centers, classification = kmeans.evaluate(X_train)
+distortions_arr.append(kmeans.distortion(X_train, class_centers))
+
+# View results
+class_centers, classification = kmeans.evaluate(X_train)
+sns.scatterplot(x=[X[0] for X in X_train],
+                y=[X[1] for X in X_train],
+                hue=true_labels,
+                style=classification,
+                palette="deep",
+                legend=None
+                )
+plt.plot([x for x, _ in kmeans.centroids],
+         [y for _, y in kmeans.centroids],
+         'k+',
+         markersize=10,
+         )
+plt.show()
+#-------------- extract the most likely k from the elbow (disortion max drop) --------
 #-------------- Why the distortion is always changing!!! -----------------------------
 # ------------- Walk through the algorithm implementation ----------------------------
 
