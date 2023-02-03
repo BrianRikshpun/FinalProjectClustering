@@ -5,12 +5,18 @@ from numpy.random import uniform
 from sklearn.datasets import make_blobs
 import seaborn as sns
 import random
-random.seed(10)
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
 from DistanceMatrices import DistanceMatrices
+from EvaluationMatrices import EvaluationMatrices
 import pandas as pd
+import itertools
+import math
 
 
 DistanceMatrices = DistanceMatrices()
+EvaluationMatrices = EvaluationMatrices()
 
 class KMeans:
     def __init__(self, n_clusters=8, max_iter=1000):
@@ -61,34 +67,97 @@ class KMeans:
             centroid_idxs.append(centroid_idx)
         return centroids, centroid_idxs
 
-    def distortion(self, fitted_data ,centers):
 
-        return np.sum(np.sqrt(((X_train - centers) ** 2.0).sum(axis=1)))
+    def elbowOptimalK(self, vals):
+        x = range(1,len(vals) + 1)
+        y = [float(v) for v in vals]
 
+        TH = 0.2 #TrashHold
+        ps = [(y[0] - y[1])/y[0]]
+        i = 1
+        while (ps[-1] >= TH) & (i <= len(vals) - 2):
+            ps.append((y[i] - y[i + 1])/y[i])
+            i += 1
 
+        return i, y[i - 1]
+
+    #
+    #     # x = np.array(x)
+    #     # y = np.array(y)
+    #     #
+    #     # z = np.polyfit(x, y, 2)
+    #     # f = np.poly1d(z)
+    #     #
+    #     # # Get the y-values of the fitted polynomial at each x
+    #     # fitted_y = f(x)
+    #     # plt.plot(list(fitted_y))
+    #     # plt.plot(vals)
+    #     # plt.show()
+    #     #
+    #     # # Calculate the first derivative of the fitted polynomial
+    #     # first_derivative = np.polyder(f, 1)
+    #     # first_derivative_y = first_derivative(fitted_y)
+    #     #
+    #     # # Find the x-value where the first derivative is closest to zero
+    #     # optimal_k = x[np.argmin(np.abs(first_derivative_y))]
+    #     #
+    #     # return int(optimal_k)
+    #
+    #     # dots = list(zip(vals,x))
+    #     # angles = []
+    #     # for i in range(len(vals) - 2):
+    #     #
+    #     #     a = dots[i]
+    #     #     b = dots[i+1]
+    #     #     c = dots[i+2]
+    #     #     angles.append(math.degrees(math.atan2(c[1]-b[1], c[0]-b[0]) - math.atan2(a[1]-b[1], a[0]-b[0])))
+    #     #
+    #     # logical_angs = [ang for ang in angles if ang <= 170]
+    #     # optimal_ang = max(logical_angs)
+    #     # optimal_k = angles.index(optimal_ang)
+    #
+    #     # diffs = []
+    #     # TH = 0.
+    #     # found = False
+    #     # optimal_k = 0
+    #     # optimal_diff = vals[0] - vals[1]
+    #     #
+    #     # while diffs[-1] > HT:
+    #
+    #
+    #     return 1
 
 # Create a dataset of 2D distributions
-centers = 3
-X_train, true_labels = make_blobs(n_features=2, n_samples=100, centers=centers, random_state=42)
+centers = 4
+X_train, true_labels = make_blobs(n_features=2, n_samples=5000, centers=centers, random_state=42)
 X_train = StandardScaler().fit_transform(X_train)
 # Fit centroids to dataset
 
 distortions_arr = []
+
+# kmeans = KMeans(n_clusters=centers)
+# kmeans.fit(X_train)
+# class_centers, classification = kmeans.evaluate(X_train)
+# distortions_arr.append(kmeans.distortion(X_train, class_centers))
 
 for i in range(1,10):
 
     kmeans = KMeans(n_clusters=i)
     kmeans.fit(X_train)
     class_centers, classification = kmeans.evaluate(X_train)
-    distortions_arr.append(kmeans.distortion(X_train, class_centers))
+    distortions_arr.append(EvaluationMatrices.distortion(X_train, class_centers))
 
+
+optimal_k,optimal_dis = kmeans.elbowOptimalK(distortions_arr)
+
+plt.scatter(x = optimal_k, y = optimal_dis, c = 'r', marker='+')
 plt.plot(range(1,10),distortions_arr)
 plt.show()
 
-kmeans = KMeans(n_clusters=centers)
+
+kmeans = KMeans(n_clusters=optimal_k)
 kmeans.fit(X_train)
 class_centers, classification = kmeans.evaluate(X_train)
-distortions_arr.append(kmeans.distortion(X_train, class_centers))
 
 # View results
 class_centers, classification = kmeans.evaluate(X_train)
@@ -105,6 +174,9 @@ plt.plot([x for x, _ in kmeans.centroids],
          markersize=10,
          )
 plt.show()
+
+
+
 #-------------- extract the most likely k from the elbow (disortion max drop) --------
 #-------------- Why the distortion is always changing!!! -----------------------------
 # ------------- Walk through the algorithm implementation ----------------------------
