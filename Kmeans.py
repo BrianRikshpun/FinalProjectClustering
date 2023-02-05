@@ -158,7 +158,7 @@ class KMeans:
 # plt.show()
 #
 #
-# kmeans = KMeans(n_clusters=optimal_k)
+# kmeans = KMeans(n_clusters=i)
 # kmeans.fit(X_train)
 # class_centers, classification = kmeans.evaluate(X_train)
 #

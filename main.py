@@ -1,7 +1,6 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn import preprocessing
-from sklearn.cluster import KMeans
 import numpy as np
 import seaborn as sns
 from clusterAnalysis import clusterAnalysis
@@ -177,6 +176,27 @@ def elbowKmeans(X_train,mink,maxk, p):
     plt.show()
 
 
+def showSilhouette(X_train, kmin, kmax, p):
+
+    X_train_df = X_train.to_numpy()
+    X_train_df = StandardScaler().fit_transform(X_train_df)
+
+    kmeans = KMeans(n_clusters=2, p=p)
+    kmeans.fit(X_train_df)
+    _, clusters = kmeans.evaluate(X_train_df)
+    X_train['cluster'] = clusters
+    s = EvaluationMatrices.silhouette(X_train, p)
+
+
+    # for i in range(kmin,kmax):
+    #     kmeans = KMeans(n_clusters=i, p=p)
+    #     kmeans.fit(X_train)
+    #     _, clusters = KMeans.evaluate()
+    #     data['cluster'] = clusters
+
+
+
+
 
 if __name__ == '__main__':
 
@@ -191,7 +211,11 @@ if __name__ == '__main__':
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
 
-    elbowKmeans(data[data.columns[12:]], 1, 10,1)
+    p = 1 #for minkowski distance
+    kmin = 2
+    kmax = 10
+    showSilhouette(data[data.columns[12:]][:200],kmin, kmax, p)
+    #elbowKmeans(data[data.columns[12:]], kmin, kmax,p)
 
     #clusterAnalizer = clusterAnalysis(data)
     # rankingAnalysis(data[data.columns[:10]])
