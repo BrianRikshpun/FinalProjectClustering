@@ -6,6 +6,11 @@ import numpy as np
 import seaborn as sns
 from clusterAnalysis import clusterAnalysis
 from Models import Models
+from Kmeans import KMeans
+from EvaluationMatrices import EvaluationMatrices
+from sklearn.preprocessing import StandardScaler
+
+EvaluationMatrices = EvaluationMatrices()
 
 def clean_db(merged):
     '''
@@ -155,6 +160,24 @@ def taxonomyDescribe(data):
                 addrow(taxonomyData, row.copy(), node, col, len(data[data[col] == node]), 0,)
 
 
+def elbowKmeans(X_train,mink,maxk, p):
+
+    X_train = X_train.to_numpy()
+    X_train = StandardScaler().fit_transform(X_train)
+    distortions_arr = []
+
+    for i in range(mink, maxk):
+        print(f'fitting k = {i}')
+        kmeans = KMeans(n_clusters=i, p = p)
+        kmeans.fit(X_train)
+        class_centers, classification = kmeans.evaluate(X_train)
+        distortions_arr.append(EvaluationMatrices.distortion(X_train, class_centers))
+
+    plt.plot(distortions_arr)
+    plt.show()
+
+
+
 if __name__ == '__main__':
 
 
@@ -168,15 +191,13 @@ if __name__ == '__main__':
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
 
-    #----- make sure the data is after clustering and with the cluster column -----
-    models = Models(data[data.columns[12:]])
-    models.ElbowKmeans()
-    clusterAnalizer = clusterAnalysis(data)
+    elbowKmeans(data[data.columns[12:]], 1, 10,1)
 
+    #clusterAnalizer = clusterAnalysis(data)
     # rankingAnalysis(data[data.columns[:10]])
     # plot_nas(data[data.columns[:10]])
     # taxonomyDescribe(data[data.columns[:10]])
-    clusterAnalysis(data[data.columns[10:]],KMeans(n_clusters=4),data['rank 9'])
+    #clusterAnalysis(data[data.columns[10:]],KMeans(n_clusters=4),data['rank 9'])
 
 
 
