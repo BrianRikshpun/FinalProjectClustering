@@ -93,19 +93,25 @@ def rankingAnalysis(data):
     #plotTaxonomyConnectionsAndBars('rank 9', 'rank 8')
 
 
-def clusterAnalysis(data, model, rank):
+def clusterAnalysis(X_train, k, rank, p):
 
-    clusters = model.fit_predict(data[data.columns[8:]])
-    data['cluster'] = clusters
-    data['rank'] = rank
+    X_train_df = X_train.to_numpy()
+    X_train_df = StandardScaler().fit_transform(X_train_df)
+
+    model = KMeans(n_clusters = k, p = p)
+    model.fit(X_train_df)
+    _, clusters = model.evaluate(X_train_df)
+
+    X_train['cluster'] = clusters
+    X_train['rank'] = rank
     le = preprocessing.LabelEncoder()
-    data['EncodedRank'] = le.fit_transform(rank)
-    codonUsageClusterheatMap(data)
+    X_train['EncodedRank'] = le.fit_transform(rank)
+    codonUsageClusterheatMap(X_train)
 
-    for ind,i in enumerate(data['cluster'].unique()):
+    for ind,i in enumerate(X_train['cluster'].unique()):
         x = []
         y = []
-        d = data.copy()
+        d = X_train.copy()
         d = d[d['cluster'] == i]
         for j in d['EncodedRank'].unique():
             d2 = d.copy()
@@ -118,18 +124,17 @@ def clusterAnalysis(data, model, rank):
         plt.show()
 
 
-def codonUsageClusterheatMap(df):
+def codonUsageClusterheatMap(X_train):
 
     # Heatmap idx = cluster, column = codon usage bias in %
 
-    cols = list(df.columns)[:-3]
-    idx = list(df['cluster'].unique())
+    cols = list(X_train.columns)[:-3]
+    idx = list(X_train['cluster'].unique())
     add_row = {}
     heat_df = pd.DataFrame(columns=cols)
 
-
     for i in idx:
-        d = df.copy()
+        d = X_train.copy()
         for col in cols:
             add_row[col] = np.average(d[d['cluster'] == i][col])
         heat_df = heat_df.append(add_row, ignore_index=True)
@@ -186,16 +191,7 @@ def showSilhouette(X_train, kmin, kmax, p):
     _, clusters = kmeans.evaluate(X_train_df)
     X_train['cluster'] = clusters
     s = EvaluationMatrices.silhouette(X_train, p)
-
-
-    # for i in range(kmin,kmax):
-    #     kmeans = KMeans(n_clusters=i, p=p)
-    #     kmeans.fit(X_train)
-    #     _, clusters = KMeans.evaluate()
-    #     data['cluster'] = clusters
-
-
-
+    print(s)
 
 
 if __name__ == '__main__':
@@ -210,18 +206,23 @@ if __name__ == '__main__':
     d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
+    data = data[:200]
 
     p = 1 #for minkowski distance
     kmin = 2
     kmax = 10
-    showSilhouette(data[data.columns[12:]][:200],kmin, kmax, p)
+    k = 2
+
+    #showSilhouette(data[data.columns[12:]],kmin, kmax, p)
     #elbowKmeans(data[data.columns[12:]], kmin, kmax,p)
 
-    #clusterAnalizer = clusterAnalysis(data)
+    # clusterAnalizer = clusterAnalysis(data)
     # rankingAnalysis(data[data.columns[:10]])
     # plot_nas(data[data.columns[:10]])
     # taxonomyDescribe(data[data.columns[:10]])
-    #clusterAnalysis(data[data.columns[10:]],KMeans(n_clusters=4),data['rank 9'])
+
+
+    clusterAnalysis(data[data.columns[10:]],k,data['rank 9'], p)
 
 
 

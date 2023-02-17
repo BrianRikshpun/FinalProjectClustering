@@ -7,6 +7,8 @@ DistanceMatrices = DistanceMatrices()
 
 class EvaluationMatrices():
 
+
+
     def distortion(self, X_train, centers):
 
         return np.sum(((X_train - centers) ** 2.0).sum(axis=1))
@@ -33,8 +35,7 @@ class EvaluationMatrices():
             d_not_c = d[d['cluster'] != c]
 
             for index in range(len(d_c)):
-                if index == 0:
-                    print(0)
+
                 c_i = len(d_c) #Number of samples in the cluster
 
                 if c_i == 1:
