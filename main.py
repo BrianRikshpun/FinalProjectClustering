@@ -201,6 +201,29 @@ def calcTaxonomyCloseness(X_train, k, p):
     score = EvaluationMatrices.TaxonomyCloseness(X_train)
     return score
 
+def plotScores(d):
+
+
+    X = list(d.keys())
+    shilhoutte = [i[0] for i in list(d.values())]
+    disortion = [i[1] for i in list(d.values())]
+    taxonomycloseness = [i[2] for i in list(d.values())]
+
+    plt.subplot(3, 1, 1)
+    plt.bar(X, shilhoutte)
+    plt.title("shilhoutte")
+
+    plt.subplot(3, 1, 2)
+    plt.bar(X, disortion)
+    plt.title("distortion")
+
+    plt.subplot(3, 1, 3)
+    plt.bar(X, taxonomycloseness)
+    plt.title("taxonomy closeness")
+
+    plt.savefig("scores.png")
+    plt.show()
+
 
 if __name__ == '__main__':
 
@@ -214,12 +237,11 @@ if __name__ == '__main__':
     d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
-    data = data[:200]
+    # data = data[:200]
 
     p = 1 #for minkowski distance
     kmin = 2
     kmax = 10
-    k = 2
 
     results = {}
 
@@ -229,10 +251,10 @@ if __name__ == '__main__':
         scores = []
         scores.append(showSilhouette(data[data.columns[12:]],i, p))
         scores.append(elbowKmeans(data[data.columns[12:]], i, p))
-        scores.append(calcTaxonomyCloseness(data,k,p))
+        scores.append(calcTaxonomyCloseness(data,i,p))
         results[i] = scores
 
-    print(0)
+    plotScores(results)
 
     # clusterAnalizer = clusterAnalysis(data)
     # rankingAnalysis(data[data.columns[:10]])
