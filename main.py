@@ -4,7 +4,6 @@ from sklearn import preprocessing
 import numpy as np
 import seaborn as sns
 from clusterAnalysis import clusterAnalysis
-from Models import Models
 from Kmeans import KMeans
 from EvaluationMatrices import EvaluationMatrices
 from sklearn.preprocessing import StandardScaler
@@ -164,34 +163,43 @@ def taxonomyDescribe(data):
                 addrow(taxonomyData, row.copy(), node, col, len(data[data[col] == node]), 0,)
 
 
-def elbowKmeans(X_train,mink,maxk, p):
+def elbowKmeans(X_train,k, p):
 
     X_train = X_train.to_numpy()
     X_train = StandardScaler().fit_transform(X_train)
-    distortions_arr = []
 
-    for i in range(mink, maxk):
-        print(f'fitting k = {i}')
-        kmeans = KMeans(n_clusters=i, p = p)
-        kmeans.fit(X_train)
-        class_centers, classification = kmeans.evaluate(X_train)
-        distortions_arr.append(EvaluationMatrices.distortion(X_train, class_centers))
-
-    plt.plot(distortions_arr)
-    plt.show()
+    kmeans = KMeans(n_clusters=k, p = p)
+    kmeans.fit(X_train)
+    class_centers, classification = kmeans.evaluate(X_train)
+    return(EvaluationMatrices.distortion(X_train, class_centers))
 
 
-def showSilhouette(X_train, kmin, kmax, p):
+def showSilhouette(X_train, k, p):
 
     X_train_df = X_train.to_numpy()
     X_train_df = StandardScaler().fit_transform(X_train_df)
 
-    kmeans = KMeans(n_clusters=2, p=p)
+    kmeans = KMeans(n_clusters=k, p=p)
     kmeans.fit(X_train_df)
     _, clusters = kmeans.evaluate(X_train_df)
     X_train['cluster'] = clusters
-    s = EvaluationMatrices.silhouette(X_train, p)
-    print(s)
+    EvaluationMatrices.silhouette(X_train, p)
+    return EvaluationMatrices.silhouette(X_train, p)
+
+
+def calcTaxonomyCloseness(X_train, k, p):
+
+    X_train_df = X_train.copy()
+    X_train_df = X_train_df[X_train_df.columns[12:]]
+    X_train_df = X_train_df.to_numpy()
+    X_train_df = StandardScaler().fit_transform(X_train_df)
+
+    kmeans = KMeans(n_clusters=k, p=p)
+    kmeans.fit(X_train_df)
+    _, clusters = kmeans.evaluate(X_train_df)
+    X_train['cluster'] = clusters
+    score = EvaluationMatrices.TaxonomyCloseness(X_train)
+    return score
 
 
 if __name__ == '__main__':
@@ -213,16 +221,24 @@ if __name__ == '__main__':
     kmax = 10
     k = 2
 
-    #showSilhouette(data[data.columns[12:]],kmin, kmax, p)
-    #elbowKmeans(data[data.columns[12:]], kmin, kmax,p)
+    results = {}
+
+    for i in range(kmin,kmax):
+
+        print(i)
+        scores = []
+        scores.append(showSilhouette(data[data.columns[12:]],i, p))
+        scores.append(elbowKmeans(data[data.columns[12:]], i, p))
+        scores.append(calcTaxonomyCloseness(data,k,p))
+        results[i] = scores
+
+    print(0)
 
     # clusterAnalizer = clusterAnalysis(data)
     # rankingAnalysis(data[data.columns[:10]])
     # plot_nas(data[data.columns[:10]])
     # taxonomyDescribe(data[data.columns[:10]])
-
-
-    clusterAnalysis(data[data.columns[10:]],k,data['rank 9'], p)
+    # clusterAnalysis(data[data.columns[10:]],k,data['rank 9'], p)
 
 
 

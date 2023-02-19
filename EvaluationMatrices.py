@@ -2,10 +2,25 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from DistanceMatrices import DistanceMatrices
+import numpy as np
 
 DistanceMatrices = DistanceMatrices()
 
 class EvaluationMatrices():
+
+    def TaxonomyCloseness(self, X_train):
+        node_entropy = {}
+        ranks = ['rank 9', 'rank 8', 'rank 7', 'rank 6', 'rank 5', 'rank 4', 'rank 3', 'rank 2']
+        for r in ranks:
+
+            species_proba = []
+            for n in X_train[r].unique():
+                species_proba.append(len(X_train[X_train[r] == n]))
+
+            species_proba = [i/len(X_train) for i in species_proba]
+            node_entropy[n] = -1 * sum([i*np.log2(i) for i in species_proba])
+
+        return sum(list(node_entropy.values()))
 
 
 
