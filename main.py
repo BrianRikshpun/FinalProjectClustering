@@ -3,10 +3,15 @@ from matplotlib import pyplot as plt
 from sklearn import preprocessing
 import numpy as np
 import seaborn as sns
+import tqdm
 from clusterAnalysis import clusterAnalysis
 from Kmeans import KMeans
 from EvaluationMatrices import EvaluationMatrices
 from sklearn.preprocessing import StandardScaler
+import time
+import warnings
+warnings.filterwarnings("ignore")
+
 
 EvaluationMatrices = EvaluationMatrices()
 
@@ -237,7 +242,7 @@ if __name__ == '__main__':
     d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
-    # data = data[:200]
+    data = data[:200]
 
     p = 1 #for minkowski distance
     kmin = 2
@@ -245,15 +250,19 @@ if __name__ == '__main__':
 
     results = {}
 
+    start = time.time()
     for i in range(kmin,kmax):
 
         print(i)
         scores = []
-        scores.append(showSilhouette(data[data.columns[12:]],i, p))
+        scores.append(0)
+        #scores.append(showSilhouette(data[data.columns[12:]],i, p))
         scores.append(elbowKmeans(data[data.columns[12:]], i, p))
         scores.append(calcTaxonomyCloseness(data,i,p))
         results[i] = scores
 
+    end = time.time()
+    print(f"time is {end - start}")
     plotScores(results)
 
     # clusterAnalizer = clusterAnalysis(data)
