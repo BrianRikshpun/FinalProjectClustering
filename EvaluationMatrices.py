@@ -13,10 +13,11 @@ class EvaluationMatrices():
         ranks = ['rank 9', 'rank 8', 'rank 7', 'rank 6', 'rank 5', 'rank 4', 'rank 3', 'rank 2']
         for r in ranks:
             for n in X_train[r].unique():
-                species_proba = []
-                for c in X_train[X_train[r] == n]['cluster'].unique():
-                    species_proba.append(len(X_train[(X_train[r] == n) & (X_train['cluster'] == c)]) / len(X_train[X_train[r] == n]))
-                node_entropy[n] = -1 * sum([i*np.log2(i) for i in species_proba])
+                if(n != ''):
+                    species_proba = []
+                    for c in X_train[X_train[r] == n]['cluster'].unique():
+                        species_proba.append(len(X_train[(X_train[r] == n) & (X_train['cluster'] == c)]) / len(X_train[X_train[r] == n]))
+                    node_entropy[n] = -1 * sum([i*np.log2(i) for i in species_proba])
 
         return sum(list(node_entropy.values()))
 

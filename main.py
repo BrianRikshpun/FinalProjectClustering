@@ -3,7 +3,6 @@ from matplotlib import pyplot as plt
 from sklearn import preprocessing
 import numpy as np
 import seaborn as sns
-import tqdm
 from clusterAnalysis import clusterAnalysis
 from Kmeans import KMeans
 from EvaluationMatrices import EvaluationMatrices
@@ -99,23 +98,25 @@ def rankingAnalysis(data):
 
 def clusterAnalysis(X_train, k, rank, p):
 
-    X_train_df = X_train.to_numpy()
+    X_train_c = X_train.copy()
+    X_train_c = X_train_c[X_train_c.columns[12:]]
+    X_train_df = X_train_c.to_numpy()
     X_train_df = StandardScaler().fit_transform(X_train_df)
 
     model = KMeans(n_clusters = k, p = p)
     model.fit(X_train_df)
     _, clusters = model.evaluate(X_train_df)
 
-    X_train['cluster'] = clusters
-    X_train['rank'] = rank
+    X_train_c['cluster'] = clusters
+    X_train_c['rank'] = rank
     le = preprocessing.LabelEncoder()
-    X_train['EncodedRank'] = le.fit_transform(rank)
-    codonUsageClusterheatMap(X_train)
+    X_train_c['EncodedRank'] = le.fit_transform(rank)
+    codonUsageClusterheatMap(X_train_c,k,p)
 
-    for ind,i in enumerate(X_train['cluster'].unique()):
+    for ind,i in enumerate(X_train_c['cluster'].unique()):
         x = []
         y = []
-        d = X_train.copy()
+        d = X_train_c.copy()
         d = d[d['cluster'] == i]
         for j in d['EncodedRank'].unique():
             d2 = d.copy()
@@ -125,10 +126,11 @@ def clusterAnalysis(X_train, k, rank, p):
 
         plt.bar(x,y)
         plt.title(f'Cluster {i} ')
-        plt.show()
+        plt.savefig(f'cluster_analysis_{p}_{k}.png')
+        #plt.show()
 
 
-def codonUsageClusterheatMap(X_train):
+def codonUsageClusterheatMap(X_train,k,p):
 
     # Heatmap idx = cluster, column = codon usage bias in %
 
@@ -149,7 +151,8 @@ def codonUsageClusterheatMap(X_train):
 
 
     sns.heatmap(heat_df[heat_df.columns[7:-3]])
-    plt.show()
+    plt.savefig(f'heatmap_{p}_{k}.png')
+    #plt.show()
 
 
 def addrow(df, d, name, rank, instances, ins, out):
@@ -206,28 +209,46 @@ def calcTaxonomyCloseness(X_train, k, p):
     score = EvaluationMatrices.TaxonomyCloseness(X_train)
     return score
 
-def plotScores(d):
+def histPerK(X_train,k,p):
 
+    X_train_df = X_train.copy()
+    X_train_df = X_train_df[X_train_df.columns[12:]]
+    X_train_df = X_train_df.to_numpy()
+    X_train_df = StandardScaler().fit_transform(X_train_df)
+
+    kmeans = KMeans(n_clusters=k, p=p)
+    kmeans.fit(X_train_df)
+    _, clusters = kmeans.evaluate(X_train_df)
+    X_train['cluster'] = clusters
+
+    lens = [len(X_train[X_train['cluster'] == c]) for c in X_train['cluster'].unique()]
+    names = list(X_train['cluster'].unique())
+
+    plt.clf()
+    plt.bar(names,lens)
+    plt.savefig(f'cluster_sizes_p = {p}, k = {k}')
+
+
+
+def plotScores(d,p):
 
     X = list(d.keys())
     shilhoutte = [i[0] for i in list(d.values())]
     disortion = [i[1] for i in list(d.values())]
     taxonomycloseness = [i[2] for i in list(d.values())]
 
-    plt.subplot(3, 1, 1)
-    plt.bar(X, shilhoutte)
-    plt.title("shilhoutte")
 
-    plt.subplot(3, 1, 2)
-    plt.bar(X, disortion)
-    plt.title("distortion")
+    fig, axs = plt.subplots(3, figsize = (10,10))
+    axs[0].bar(X, shilhoutte)
+    axs[0].set_title(f"shilhoutte p = {p}")
 
-    plt.subplot(3, 1, 3)
-    plt.bar(X, taxonomycloseness)
-    plt.title("taxonomy closeness")
+    axs[1].bar(X, disortion)
+    axs[1].set_title(f"distortion p = {p}")
 
-    plt.savefig("scores.png")
-    plt.show()
+    axs[2].bar(X, taxonomycloseness)
+    axs[2].set_title(f"taxonomy closeness p = {p}")
+
+    plt.savefig(f"scores{p}.png")
 
 
 if __name__ == '__main__':
@@ -242,29 +263,28 @@ if __name__ == '__main__':
     d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
-    data.to_csv("ready_to_run.csv")
 
 
-    p = 1 #for minkowski distance
+    ps = [1,2,3,4,5] #for minkowski distance
     kmin = 2
-    kmax = 10
+    kmax = 15
 
     results = {}
+    for p in ps:
+        start = time.time()
+        for i in range(kmin,kmax):
 
-    start = time.time()
-    for i in range(kmin,kmax):
-
-        print(i)
-        scores = []
-        scores.append(0)
-        #scores.append(showSilhouette(data[data.columns[12:]],i, p))
-        scores.append(elbowKmeans(data[data.columns[12:]], i, p))
-        scores.append(calcTaxonomyCloseness(data,i,p))
-        results[i] = scores
-
-    end = time.time()
-    print(f"time is {end - start}")
-    plotScores(results)
+            print(i)
+            scores = []
+            scores.append(0)
+            #scores.append(showSilhouette(data[data.columns[12:]],i, p))
+            scores.append(elbowKmeans(data[data.columns[12:]], i, p))
+            scores.append(calcTaxonomyCloseness(data,i,p))
+            results[i] = scores
+            histPerK(data, i, p)
+        end = time.time()
+        print(f"time is {end - start}")
+        plotScores(results,p)
 
     # clusterAnalizer = clusterAnalysis(data)
     # rankingAnalysis(data[data.columns[:10]])
