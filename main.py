@@ -263,9 +263,10 @@ if __name__ == '__main__':
     d2 = pd.read_csv('final_codon_dataset.csv') #Codon features
     merged = d.merge(d2, on='Taxid')
     data = clean_db(merged)
+    data.to_csv("ready_to_run.csv")
 
 
-    ps = [1,2,3,4,5] #for minkowski distance
+    ps = [1,2,3,50,100,1000] #for minkowski distance
     kmin = 2
     kmax = 15
 
