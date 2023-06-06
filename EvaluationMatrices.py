@@ -24,7 +24,7 @@ class EvaluationMatrices():
 
     def calcTreeTaxonomy(self, df):
 
-        ranks = ['rank 2', 'rank 3', 'rank 4', 'rank 5', 'rank 6', 'rank 7', 'rank 8', 'rank 9']
+        ranks = ['rank 2', 'rank 3', 'rank 4', 'rank 5', 'rank 6', 'rank 7', 'rank 8']
 
         ranks_entropies = {}
 
@@ -55,7 +55,7 @@ class EvaluationMatrices():
                             ranks_entropies[node] += (len(d[d[ranks[i - 1]] == w]) / len(d)) * ranks_entropies[w]
 
         summ = 0
-        for node in df['rank 9'].unique():
+        for node in df['rank 8'].unique():
             if str(node) != 'nan':
                 print(f'{node} entropy is {ranks_entropies[node]} ')
                 summ += ranks_entropies[node]
